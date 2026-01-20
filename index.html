@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neuron Signal | Infrastructure Status</title>
+    <title>Neuron Status | Infrastructure Monitor</title>
     <style>
         body {
             background-color: #0d1117;
@@ -16,7 +16,8 @@
         }
         .monitor {
             width: 100%;
-            max-width: 700px;
+            max-width: 750px;
+            animation: fadeIn 0.8s ease;
         }
         header {
             border-bottom: 1px solid #30363d;
@@ -26,60 +27,75 @@
             justify-content: space-between;
             align-items: center;
         }
-        h1 { color: #ff8c00; font-size: 1.5rem; margin: 0; letter-spacing: 2px; }
+        h1 { color: #ff8c00; font-size: 1.4rem; margin: 0; letter-spacing: 3px; font-weight: bold; }
+        
         .service-row {
             display: flex;
             justify-content: space-between;
-            padding: 15px 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            transition: 0.3s;
+            align-items: center;
+            padding: 14px 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            transition: 0.2s;
         }
-        .service-row:hover { background: rgba(255, 140, 0, 0.05); }
-        .status-badge { font-weight: bold; }
+        .service-row:hover { background: rgba(255, 140, 0, 0.04); }
+        
+        .status-badge { font-size: 0.85rem; font-weight: bold; display: flex; align-items: center; }
+        
+        /* Цвета статусов */
         .online { color: #238636; }
-        .offline { color: #da3633; blink 1s infinite; }
-        .checking { color: #8b949e; }
+        .offline { color: #da3633; animation: blink 1.5s infinite; }
+        .private { color: #8b949e; letter-spacing: 1px; }
+        .checking { color: #58a6ff; opacity: 0.6; }
         
         .dot {
-            height: 10px;
-            width: 10px;
+            height: 8px;
+            width: 8px;
             border-radius: 50%;
             display: inline-block;
-            margin-right: 10px;
+            margin-right: 12px;
         }
-        .dot-online { background-color: #238636; box-shadow: 0 0 10px #238636; }
-        .dot-offline { background-color: #da3633; box-shadow: 0 0 10px #da3633; }
+        .dot-online { background-color: #238636; box-shadow: 0 0 8px #238636; }
+        .dot-offline { background-color: #da3633; box-shadow: 0 0 8px #da3633; }
+        .dot-private { border: 1px solid #8b949e; background: transparent; }
 
-        @keyframes blink { 50% { opacity: 0.5; } }
+        @keyframes blink { 50% { opacity: 0.4; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        .footer-info { margin-top: 40px; font-size: 0.8rem; color: #8b949e; text-align: center; }
+        .footer-info { margin-top: 50px; font-size: 0.75rem; color: #484f58; text-align: center; line-height: 1.6; }
+        #time { color: #ff8c00; }
     </style>
 </head>
 <body>
 
 <div class="monitor">
     <header>
-        <h1>NEURON_SIGNAL v2.0</h1>
-        <div id="global-status" style="font-size: 0.8rem;">SYSTEM_CHECK...</div>
+        <h1>NEURON_STATUS_v2.6</h1>
+        <div id="global-status" style="font-size: 0.7rem; color: #8b949e;">INITIATING_SCAN...</div>
     </header>
 
     <div id="services-list">
         </div>
 
     <div class="footer-info">
-        <p>LAST UPDATE: <span id="time">--:--:--</span></p>
-        <p style="font-size: 0.6rem; opacity: 0.5;">Все проверки выполняются в реальном времени через клиентский узел.</p>
+        <p>ПОСЛЕДНЕЕ ОБНОВЛЕНИЕ: <span id="time">--:--:--</span></p>
+        <p style="letter-spacing: 1px;">&copy; 2026 NEURON ECOSYSTEM | ENCRYPTED PROTOCOL</p>
     </div>
 </div>
 
 <script>
     const services = [
-        { name: "Portal", url: "https://neuron-p2p.ru" },
-        { name: "Synapse", url: "https://synapse.neuron-p2p.ru" },
-        { name: "Neuron AI", url: "https://neuron-ai-eta.vercel.app" },
-        { name: "What If", url: "https://ifwhat.ru" },
-        { name: "Budget", url: "https://budget.neuron-p2p.ru" },
-        { name: "Study Hub", url: "https://study.neuron-p2p.ru" }
+        { name: "Portal (Main Hub)", url: "https://neuron-p2p.ru" },
+        { name: "Synapse (P2P Mesh)", url: "https://synapse.neuron-p2p.ru" },
+        { name: "Neuron AI (Core)", url: "https://neuron-ai-eta.vercel.app" },
+        { name: "Neuron Portfolio", url: "#", isPrivate: true }, 
+        { name: "What If (History)", url: "https://ifwhat.ru" },
+        { name: "Neuron Digital", url: "https://neurondigital.tilda.ws" },
+        { name: "Budget Tracker", url: "https://budget.neuron-p2p.ru" },
+        { name: "Study Hub", url: "https://study.neuron-p2p.ru" },
+        { name: "Game Hub", url: "https://game-hub.neuron-p2p.ru" },
+        { name: "Converter", url: "https://converter.neuron-p2p.ru" },
+        { name: "Password Gen", url: "https://password-generator.neuron-p2p.ru" },
+        { name: "Neuron Link", url: "https://link.neuron-p2p.ru" }
     ];
 
     async function updateStatus() {
@@ -90,22 +106,29 @@
         for (let service of services) {
             const row = document.createElement('div');
             row.className = 'service-row';
-            row.innerHTML = `<span>${service.name}</span><span class="status-badge checking">CHECKING...</span>`;
-            list.appendChild(row);
+            
+            if (service.isPrivate) {
+                // Логика для приватного сервиса
+                row.innerHTML = `<span>${service.name}</span><span class="status-badge private"><span class="dot dot-private"></span>PRIVATE ACCESS</span>`;
+            } else {
+                // Логика для публичных сервисов
+                row.innerHTML = `<span>${service.name}</span><span class="status-badge checking">SCANNING...</span>`;
+                list.appendChild(row); // Добавляем временно, пока идет fetch
 
-            try {
-                // Используем fetch с mode: no-cors для проверки жизни домена
-                const res = await fetch(service.url, { mode: 'no-cors', cache: 'no-store' });
-                row.innerHTML = `<span>${service.name}</span><span class="status-badge online"><span class="dot dot-online"></span>OPERATIONAL</span>`;
-            } catch (e) {
-                row.innerHTML = `<span>${service.name}</span><span class="status-badge offline"><span class="dot dot-offline"></span>DEGRADED</span>`;
+                try {
+                    const res = await fetch(service.url, { mode: 'no-cors', cache: 'no-store' });
+                    row.innerHTML = `<span>${service.name}</span><span class="status-badge online"><span class="dot dot-online"></span>OPERATIONAL</span>`;
+                } catch (e) {
+                    row.innerHTML = `<span>${service.name}</span><span class="status-badge offline"><span class="dot dot-offline"></span>DEGRADED</span>`;
+                }
             }
+            if (!service.isPrivate) { /* уже добавлен в цикле */ } else { list.appendChild(row); }
         }
-        document.getElementById('global-status').innerText = "ALL SYSTEMS NOMINAL";
+        document.getElementById('global-status').innerText = "SYSTEMS: STABLE";
     }
 
     updateStatus();
-    setInterval(updateStatus, 60000); // Обновлять раз в минуту
+    setInterval(updateStatus, 60000); // Обновление каждую минуту
 </script>
 
 </body>
