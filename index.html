@@ -39,9 +39,16 @@
         }
         .service-row:hover { background: rgba(255, 140, 0, 0.04); }
         
+        /* Стили ссылок сервисов */
+        .service-link {
+            color: #e6edf3;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+        .service-link:hover { color: #ff8c00; }
+        
         .status-badge { font-size: 0.85rem; font-weight: bold; display: flex; align-items: center; }
         
-        /* Цвета статусов */
         .online { color: #238636; }
         .offline { color: #da3633; animation: blink 1.5s infinite; }
         .private { color: #8b949e; letter-spacing: 1px; }
@@ -62,6 +69,12 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
         .footer-info { margin-top: 50px; font-size: 0.75rem; color: #484f58; text-align: center; line-height: 1.6; }
+        .footer-link {
+            color: #484f58;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+        .footer-link:hover { color: #ff8c00; }
         #time { color: #ff8c00; }
     </style>
 </head>
@@ -73,12 +86,11 @@
         <div id="global-status" style="font-size: 0.7rem; color: #8b949e;">INITIATING_SCAN...</div>
     </header>
 
-    <div id="services-list">
-        </div>
+    <div id="services-list"></div>
 
     <div class="footer-info">
         <p>ПОСЛЕДНЕЕ ОБНОВЛЕНИЕ: <span id="time">--:--:--</span></p>
-        <p style="letter-spacing: 1px;">&copy; 2026 NEURON ECOSYSTEM | ENCRYPTED PROTOCOL</p>
+        <p><a href="https://neuron-p2p.ru" class="footer-link">© 2026 NEURON ECOSYSTEM</a> | ENCRYPTED PROTOCOL</p>
     </div>
 </div>
 
@@ -107,28 +119,33 @@
             const row = document.createElement('div');
             row.className = 'service-row';
             
+            // Название с ссылкой (если не приватный)
+            const serviceTitle = service.isPrivate 
+                ? `<span>${service.name}</span>` 
+                : `<a href="${service.url}" class="service-link" target="_blank">${service.name}</a>`;
+            
             if (service.isPrivate) {
-                // Логика для приватного сервиса
-                row.innerHTML = `<span>${service.name}</span><span class="status-badge private"><span class="dot dot-private"></span>PRIVATE ACCESS</span>`;
+                row.innerHTML = `${serviceTitle}<span class="status-badge private"><span class="dot dot-private"></span>PRIVATE ACCESS</span>`;
             } else {
-                // Логика для публичных сервисов
-                row.innerHTML = `<span>${service.name}</span><span class="status-badge checking">SCANNING...</span>`;
-                list.appendChild(row); // Добавляем временно, пока идет fetch
+                row.innerHTML = `${serviceTitle}<span class="status-badge checking">SCANNING...</span>`;
+                list.appendChild(row);
 
                 try {
-                    const res = await fetch(service.url, { mode: 'no-cors', cache: 'no-store' });
-                    row.innerHTML = `<span>${service.name}</span><span class="status-badge online"><span class="dot dot-online"></span>OPERATIONAL</span>`;
+                    await fetch(service.url, { mode: 'no-cors', cache: 'no-store' });
+                    row.querySelector('.status-badge').innerHTML = `<span class="dot dot-online"></span>OPERATIONAL`;
+                    row.querySelector('.status-badge').className = 'status-badge online';
                 } catch (e) {
-                    row.innerHTML = `<span>${service.name}</span><span class="status-badge offline"><span class="dot dot-offline"></span>DEGRADED</span>`;
+                    row.querySelector('.status-badge').innerHTML = `<span class="dot dot-offline"></span>DEGRADED`;
+                    row.querySelector('.status-badge').className = 'status-badge offline';
                 }
             }
-            if (!service.isPrivate) { /* уже добавлен в цикле */ } else { list.appendChild(row); }
+            if (service.isPrivate) list.appendChild(row);
         }
         document.getElementById('global-status').innerText = "SYSTEMS: STABLE";
     }
 
     updateStatus();
-    setInterval(updateStatus, 60000); // Обновление каждую минуту
+    setInterval(updateStatus, 60000);
 </script>
 
 </body>
